@@ -1,13 +1,21 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { Image, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { auth, db } from "../firebaseconfig";
-import { doc, getDoc } from "firebase/firestore";
 
 export default function VendorProfile() {
   const [isEnabled, setIsEnabled] = useState(true);
-  const [vendorData, setVendorData] = useState({ fullName: '', email: '' });
+  const [vendorData, setVendorData] = useState({
+    fullName: "",
+    email: "",
+    farmName: "",
+    experience: "",
+    location: "",
+    category: "",
+    photoURL: "",
+  });
 
   const toggleSwitch = () => setIsEnabled((prev) => !prev);
 
@@ -15,13 +23,18 @@ export default function VendorProfile() {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    getDoc(doc(db, 'users', uid)).then((snap) => {
+    getDoc(doc(db, "users", uid)).then((snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        if (data.role === 'vendor') {
+        if (data.role === "vendor") {
           setVendorData({
-            fullName: data.fullName || '',
-            email: data.email || '',
+            fullName: data.fullName || "",
+            email: data.email || "",
+            farmName: data.farmName || "",
+            experience: data.experience || "",
+            location: data.location || "",
+            category: data.category || "",
+            photoURL: data.photoURL || "",
           });
         }
       }
@@ -31,7 +44,13 @@ export default function VendorProfile() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
-        <Image source={require("../assets/profile.png")} style={styles.avatar} />
+        {/* ✅ Show uploaded profile picture if available */}
+        {vendorData.photoURL ? (
+          <Image source={{ uri: vendorData.photoURL }} style={styles.avatar} />
+        ) : (
+          <Image source={require("../assets/profile.png")} style={styles.avatar} />
+        )}
+
         <Text style={styles.name}>{vendorData.fullName}</Text>
         <Text style={styles.verified}>Verified Vendor</Text>
         <Text style={styles.rating}>4.8</Text>
@@ -60,6 +79,7 @@ export default function VendorProfile() {
         </View>
       </View>
 
+      {/* ✅ Basic Information pulled from Firestore */}
       <View style={styles.infoBox}>
         <Text style={styles.infoHeader}>Basic Information</Text>
         <View style={styles.infoRow}>
@@ -68,15 +88,19 @@ export default function VendorProfile() {
         </View>
         <View style={styles.infoRow}>
           <MaterialIcons name="category" size={18} color="#555" />
-          <Text style={styles.infoText}>Organic vegetables</Text>
+          <Text style={styles.infoText}>{vendorData.category || "Not specified"}</Text>
         </View>
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={18} color="#555" />
-          <Text style={styles.infoText}>Sunny Acres Farm</Text>
+          <Text style={styles.infoText}>{vendorData.location || "Not specified"}</Text>
         </View>
         <View style={styles.infoRow}>
           <Ionicons name="time-outline" size={18} color="#555" />
-          <Text style={styles.infoText}>15 years</Text>
+          <Text style={styles.infoText}>{vendorData.experience || "Not specified"}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="home-outline" size={18} color="#555" />
+          <Text style={styles.infoText}>{vendorData.farmName || "Not specified"}</Text>
         </View>
       </View>
 
@@ -85,10 +109,10 @@ export default function VendorProfile() {
         <Switch value={isEnabled} onValueChange={toggleSwitch} />
       </View>
 
-      <TouchableOpacity style={styles.logoutBtn}>
+      {/* <TouchableOpacity style={styles.logoutBtn}>
         <Ionicons name="log-out-outline" size={20} color="#e74c3c" />
         <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </ScrollView>
   );
 }
@@ -149,3 +173,4 @@ const styles = StyleSheet.create({
   },
   logoutText: { marginLeft: 6, color: "#e74c3c", fontWeight: "bold", fontSize: 16 },
 });
+
