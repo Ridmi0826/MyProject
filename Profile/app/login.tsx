@@ -1,0 +1,64 @@
+// app/login.tsx
+import { useRouter } from 'expo-router';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth, db } from '../firebaseconfig';
+import styles from './styles/LoginStyles';
+
+export default function Login() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {alert('Please fill all fields.'); return; }
+    try {
+      setLoading(true);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const docRef = doc(db,'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const userData = docSnap.data() as any;
+         alert('Login successful!'); 
+        if (userData.role === 'buyer'){
+          router.push('/buyerhome');
+        }  
+        else{
+          router.push('/vendorhome');
+        }
+      } else {
+        alert('No user data found.');
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+            <Image
+                source={require("../assets/Logo.jpg")}
+                style={{ width: 150, height: 150, alignSelf: "center", marginTop: 40 }}
+            />
+    <View style={styles.container}>
+    
+      <Text style={styles.title}>Welcome Back!</Text>
+
+      <Text style={styles.name}>Email</Text>
+      <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+       <Text style={styles.name}>Password</Text>
+      <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>Log In</Text>}
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => router.push('/signup')}><Text style={styles.signupLink}>Don’t have an account? <Text style={styles.signupText}>Sign up</Text></Text></TouchableOpacity>
+    </View>
+     </View>
+  );
+}
